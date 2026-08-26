@@ -281,13 +281,13 @@ include::{header_dir}/interop/templateFunctionMakeX.h[lines=4..-1]
 
 For each <<sycl-runtime>> class [code]#T# which supports <<sycl-application>>
 interoperability, a specialization of the appropriate template function
-[code]#make_{sycl_class}# where [code]#{sycl_class}# is the class name of
+[code]#+make_{sycl_class}+# where [code]#+{sycl_class}+# is the class name of
 [code]#T#, must be defined, which takes a <<sycl-application>> interoperability
 <<native-backend-object>> and constructs and returns an instance of [code]#T#.
 The availability and behavior of these template functions are defined by the
 <<backend>> specification document.
 
-Overloads of the [code]#make_{sycl_class}# function which take a SYCL
+Overloads of the [code]#+make_{sycl_class}+# function which take a SYCL
 <<context>> object as an argument must throw an [code]#exception# with the
 [code]#errc::backend_mismatch# error code if the backend of the provided SYCL
 context doesn't match the target backend.
@@ -606,6 +606,7 @@ A SYCL implementation or a <<backend>> may provide additional properties other
 than those defined here, provided they are defined in accordance with the
 requirements described in <<sec:headers-and-namespaces>>.
 
+[[subsec:properties-interface]]
 ==== Properties interface
 
 Each of the runtime classes mentioned above must provide a common interface of
@@ -1275,56 +1276,141 @@ include::{header_dir}/context.h[lines=4..-1]
 [[sec:context-ctors]]
 ==== Constructors
 
+All context constructors take a parameter named [code]#propList# which allows
+the application to pass zero or more properties.
+These properties may specify additional effects of the constructor and may also
+specify exceptions that the constructor throws.
+See <<sec:context-properties>> for the context properties that are defined by
+the <<core-spec>>.
+
+'''
+
 .[apititle]#Default constructor#
 [source,role=synopsis,id=api:context-ctor]
 ----
-explicit context(async_handler asyncHandler = {})
+explicit context(const property_list& propList = {})
 ----
 
-_Effects:_ Constructs a [code]#context# object using the
-[code]#default_selector_v# to determine the associated platform and devices.
-The associated platform is the platform which contains the device selected by
+_Effects:_ Constructs a [code]#context# object using the device selected by
 [code]#default_selector_v#.
-The <<device,devices>> that are associated with the constructed context are
-implementation-defined but must contain the device that is selected by
-[code]#default_selector_v#.
-The constructed context uses the [code]#asyncHandler# parameter to handle
-exceptions.
+The context's platform is the platform that contains this device.
+The context contains the selected device.
+The context may also contain other devices from the same platform.
+Whether this happens is implementation defined.
 
 '''
 
-.[apititle]#Construct from device#
-[source,role=synopsis,id=api:context-ctor-dev]
+.[apititle]#Constructor with async handler#
+[source,role=synopsis,id=api:context-ctor-async-handler]
 ----
-explicit context(const device& dev, async_handler asyncHandler = {})
+explicit context(async_handler asyncHandler, const property_list& propList = {})
 ----
 
-_Effects:_ Constructs a [code]#context# object using the [code]#dev# parameter
-to determine the associated platform and device.
-The associated platform is the platform that contains [code]#dev#, and the
-associated device is [code]#dev#.
-The constructed context uses the [code]#asyncHandler# parameter to handle
-exceptions.
+_Effects:_ Constructs a [code]#context# object using the device selected by
+[code]#default_selector_v#.
+The context's platform is the platform that contains this device.
+The context contains the selected device.
+The context may also contain other devices from the same platform.
+Whether this happens is implementation defined.
+The context has the asynchronous error handler [code]#asyncHandler#.
 
 '''
 
-.[apititle]#Construct from device list#
-[source,role=synopsis,id=api:context-ctor-dev-list]
+.[apititle]#Constructor with device#
+[source,role=synopsis,id=api:context-ctor-device]
 ----
-explicit context(const std::vector<device>& deviceList,
-                 async_handler asyncHandler = {})
+explicit context(const device& dev, const property_list& propList = {})
+----
+
+_Effects:_ Constructs a [code]#context# object that contains the device
+[code]#dev#.
+The context's platform is the platform that contains [code]#dev#.
+
+'''
+
+.[apititle]#Constructor with device and async handler#
+[source,role=synopsis,id=api:context-ctor-device-async-handler]
+----
+explicit context(const device& dev, async_handler asyncHandler,
+                 const property_list& propList = {})
+----
+
+_Effects:_ Constructs a [code]#context# object that contains the device
+[code]#dev#.
+The context's platform is the platform that contains [code]#dev#.
+The context has the asynchronous error handler [code]#asyncHandler#.
+
+'''
+
+.[apititle]#Constructor with platform#
+[source,role=synopsis,id=api:context-ctor-platform]
+----
+explicit context(const platform& plt, const property_list& propList = {})
+----
+
+_Effects:_ Constructs a [code]#context# object that contains all of the devices
+in the platform [code]#plt#.
+The context's platform is [code]#plt#.
+
+_Throws:_ An [code]#exception# with the [code]#errc::invalid# error code if the
+platform [code]#plt# contains no devices.
+
+'''
+
+.[apititle]#Constructor with platform and async handler#
+[source,role=synopsis,id=api:context-ctor-platform-async-handler]
+----
+explicit context(const platform& plt, async_handler asyncHandler,
+                 const property_list& propList = {})
+----
+
+_Effects:_ Constructs a [code]#context# object that contains all of the devices
+in the platform [code]#plt#.
+The context's platform is [code]#plt#.
+The context has the asynchronous error handler [code]#asyncHandler#.
+
+_Throws:_ An [code]#exception# with the [code]#errc::invalid# error code if the
+platform [code]#plt# contains no devices.
+
+'''
+
+.[apititle]#Constructor with device list#
+[source,role=synopsis,id=api:context-ctor-device-list]
+----
+explicit context(const std::vector<device>& deviceList, const property_list& propList = {})
 ----
 
 _Preconditions:_ All devices in [code]#deviceList# must be associated with the
 same platform.
 
-_Effects:_ Constructs a [code]#context# object using the [code]#deviceList#
-parameter to determine the associated platform and device.
-The associated platform is the platform that contains all of the devices in
+_Effects:_ Constructs a [code]#context# object that contains all of the devices
+in [code]#deviceList#.
+The context's platform is the platform that contains the devices in
 [code]#deviceList#.
-The associated devices are those devices in [code]#deviceList#.
-The constructed context uses the [code]#asyncHandler# parameter to handle
-exceptions.
+
+_Throws:_ An [code]#exception# with the [code]#errc::invalid# error code if
+[code]#deviceList# is empty.
+
+'''
+
+.[apititle]#Constructor with device list and async handler#
+[source,role=synopsis,id=api:context-ctor-device-list-async-handler]
+----
+explicit context(const std::vector<device>& deviceList, async_handler asyncHandler,
+                 const property_list& propList = {})
+----
+
+_Preconditions:_ All devices in [code]#deviceList# must be associated with the
+same platform.
+
+_Effects:_ Constructs a [code]#context# object that contains all of the devices
+in [code]#deviceList#.
+The context's platform is the platform that contains the devices in
+[code]#deviceList#.
+The context has the asynchronous error handler [code]#asyncHandler#.
+
+_Throws:_ An [code]#exception# with the [code]#errc::invalid# error code if
+[code]#deviceList# is empty.
 
 '''
 
@@ -1517,12 +1603,14 @@ struct atomic_memory_scope_capabilities {
 _Remarks:_ Template parameter to [api]#context::get_info#.
 
 _Returns:_ The set of memory scopes supported by atomic operations on all
-devices in the context.
+devices in the context, which is a subset of {[code]#memory_scope::sub_group#,
+[code]#memory_scope::work_group#, [code]#memory_scope::device#,
+[code]#memory_scope::system#}.
 When a context returns a "wider" memory scope in this set, it must also return
-all "narrower" memory scopes.
+all "narrower" memory scopes in this subset.
 (See <<sec:memory-scope>> for a definition of "wider" and "narrower" scopes.)
-At a minimum, each context must support [code]#memory_scope::work_item#,
-[code]#memory_scope::sub_group#, and [code]#memory_scope::work_group#.
+At a minimum, each context must support [code]#memory_scope::sub_group# and
+[code]#memory_scope::work_group#.
 
 '''
 
@@ -1551,6 +1639,7 @@ At a minimum, each context must support [code]#memory_scope::work_item#,
 [[sec:context-properties]]
 ==== Properties
 
+The <<core-spec>> does not define any properties for the context constructors.
 The [code]#property_list# constructor parameters are present for extensibility.
 
 
@@ -2068,6 +2157,9 @@ struct preferred_vector_width_int {
 struct preferred_vector_width_long {
   using return_type = std::uint32_t;
 };
+struct preferred_vector_width_long_long {
+  using return_type = std::uint32_t;
+};
 struct preferred_vector_width_float {
   using return_type = std::uint32_t;
 };
@@ -2107,6 +2199,9 @@ struct native_vector_width_int {
   using return_type = std::uint32_t;
 };
 struct native_vector_width_long {
+  using return_type = std::uint32_t;
+};
+struct native_vector_width_long_long {
   using return_type = std::uint32_t;
 };
 struct native_vector_width_float {
@@ -2739,12 +2834,14 @@ struct atomic_memory_scope_capabilities {
 _Remarks:_ Template parameter to [api]#device::get_info#.
 
 _Returns:_ The set of memory scopes supported by atomic operations on this
-device.
+device, which is a subset of {[code]#memory_scope::sub_group#,
+[code]#memory_scope::work_group#, [code]#memory_scope::device#,
+[code]#memory_scope::system#}.
 When a device returns a "wider" memory scope in this set, it must also return
-all "narrower" memory scopes.
+all "narrower" memory scopes in this subset.
 (See <<sec:memory-scope>> for a definition of "wider" and "narrower" scopes.)
-At a minimum, each device must support [code]#memory_scope::work_item#,
-[code]#memory_scope::sub_group#, and [code]#memory_scope::work_group#.
+At a minimum, each device must support [code]#memory_scope::sub_group# and
+[code]#memory_scope::work_group#.
 
 '''
 
@@ -3509,8 +3606,8 @@ Indicates that the device supports explicit USM allocations as described in
 --
 Indicates that the device can access USM memory allocated via
 [code]#usm::alloc::host#.
-The device only supports atomic modification of a host allocation if
-[api]#aspect::usm_atomic_host_allocations# is also supported.
+Concurrent access and atomic modification of a host allocation is only supported
+if [api]#aspect::usm_atomic_host_allocations# is also supported.
 (See <<sec:usm>>.)
 --
 
@@ -4541,11 +4638,11 @@ queue.
 .[apidef]#queue::prefetch#
 [source,role=synopsis,id=api:queue-prefetch]
 ----
-event prefetch(void* ptr, std::size_t numBytes)                                      (1)
+event prefetch(const void* ptr, std::size_t numBytes)                                      (1)
 
-event prefetch(void* ptr, std::size_t numBytes, event depEvent)                      (2)
+event prefetch(const void* ptr, std::size_t numBytes, event depEvent)                      (2)
 
-event prefetch(void* ptr, std::size_t numBytes, const std::vector<event>& depEvents) (3)
+event prefetch(const void* ptr, std::size_t numBytes, const std::vector<event>& depEvents) (3)
 ----
 
 _Effects (1):_ Equivalent to calling [api]#queue::submit# with a command group
@@ -4567,11 +4664,11 @@ queue.
 .[apidef]#queue::mem_advise#
 [source,role=synopsis,id=api:queue-mem-advise]
 ----
-event mem_advise(void* ptr, std::size_t numBytes, int advice)                 (1)
+event mem_advise(const void* ptr, std::size_t numBytes, int advice)                 (1)
 
-event mem_advise(void* ptr, std::size_t numBytes, int advice, event depEvent) (2)
+event mem_advise(const void* ptr, std::size_t numBytes, int advice, event depEvent) (2)
 
-event mem_advise(void* ptr, std::size_t numBytes, int advice,                 (3)
+event mem_advise(const void* ptr, std::size_t numBytes, int advice,                 (3)
                  const std::vector<event>& depEvents)
 ----
 
@@ -4796,12 +4893,17 @@ _Returns:_ The <<backend>> associated with this event.
 std::vector<event> get_wait_list()
 ----
 
+Deprecated by SYCL {SYCL_VERSION}.
+
 _Returns:_ The list of events that this event waits for in the dependence graph.
 Only direct dependencies are returned, and not transitive dependencies that
 direct dependencies wait on.
 
 _Remarks:_ Whether already completed events are included in the returned list is
 implementation-defined.
+If the event is associated with a command submitted to an in-order queue, then
+it is implementation-defined whether this function returns any dependent events
+or if it returns an empty vector.
 
 '''
 
@@ -7361,6 +7463,7 @@ access_mode::read_write
 |====
 
 
+[[subsec:accessor-deduction-tags]]
 ==== Deduction tags
 
 Some accessor constructors take a [code]#DeductionTagT# parameter, which is used
@@ -7381,6 +7484,7 @@ being constructed, so they are described more fully below in the section that
 pertains to each of the accessor types.
 
 
+[[sec:accessor-properties]]
 ==== Properties
 
 All accessor constructors accept a [code]#property_list# parameter, which
@@ -11082,13 +11186,20 @@ include::{code_dir}/usm_device.cpp[lines=4..-1]
 
 === Unified addressing
 
-Unified Addressing guarantees that all devices will use a unified address space.
-Pointer values in the unified address space will always refer to the same
-location in memory.
-The unified address space encompasses the host and one or more devices.
-Note that this does not require addresses in the unified address space to be
-accessible on all devices, just that pointer values will be consistent.
+The following guarantees apply to the pointer values of USM allocations for
+objects with overlapping lifetimes:
 
+  * A USM pointer is different from all non-USM memory addresses on the host.
+  * A USM host memory pointer allocated from context _C_ has a value that is
+    different from all other USM host memory pointers (regardless of context),
+    different from all USM shared memory pointers (regardless of context), and
+    different from all USM device memory pointers allocated from context _C_.
+  * A USM shared memory pointer allocated from context _C_ has a value that is
+    different from all other USM shared memory pointers (regardless of context),
+    different from all USM host memory pointers (regardless of context), and
+    different from all USM device memory pointers allocated from context _C_.
+  * A USM device memory pointer allocated from context _C_ has a value that is
+    different from all other USM pointers allocated from context _C_.
 
 === Kinds of unified shared memory
 
@@ -11281,6 +11392,7 @@ Users may query the device to determine if system allocations are supported for
 use on the device, through [code]#aspect::usm_system_allocations#.
 
 
+[[sec:usm-allocations]]
 === USM allocations
 
 USM provides several allocation functions.
@@ -11995,6 +12107,7 @@ _Effects_: Equivalent to [code]#return free(ptr, q.get_context());#.
 submit a "free" <<command>> to the device; the [code]#queue# argument is only
 used to determine the [code]#context# associated with [code]#ptr#.{endnote}
 
+[[subsec:usm-mem-ptr-queries]]
 === Unified shared memory pointer queries
 
 Since USM pointers look like raw {cpp} pointers, users cannot deduce what kind
@@ -12728,16 +12841,21 @@ Then return the initial copy of the [code]#id#.
 [[subsec:item.class]]
 ==== [code]#item# class
 
-<<item>> identifies an instance of the function object executing at each point
-in a [code]#range#.
-It is passed to a [code]#parallel_for# call or returned by member functions of
-[code]#h_item#.
+The [code]#item# class template identifies an instance of a kernel function
+object executing at each point in a <<range>>.
 It encapsulates enough information to identify the work-item's range of possible
 values and its ID in that range.
-It can optionally carry the offset of the range if provided to the
-[code]#parallel_for#; note this is deprecated in SYCL 2020.
-Instances of the [code]#item# class are not user-constructible and are passed by
-the runtime to each instance of the function object.
+
+The implementation constructs instances of the [code]#item# class template.
+Applications that attempt to default construct an [code]#item# object are ill
+formed, and the implementation must issue a diagnostic in this case.
+
+{note}If using {cpp17}, implementations must ensure that the [code]#item# class
+template is not an aggregate.
+{endnote}
+
+The [code]#item# class template can optionally carry the offset of the range if
+provided to the [code]#parallel_for#; note this is deprecated in SYCL 2020.
 
 The SYCL [code]#item# class template provides the common by-value semantics (see
 <<sec:byval-semantics>>).
@@ -12852,15 +12970,19 @@ std::size_t get_linear_id() const noexcept;
 [[nditem-class]]
 ==== [code]#nd_item# class
 
-[code]#nd_item<int Dimensions># identifies an instance of the function object
-executing at each point in an [code]#nd_range<int Dimensions># passed to a
-[code]#parallel_for# call.
-It encapsulates enough information to identify the <<work-item>>'s local and
-global <<id,ids>>, the <<work-group-id>> and also provides access to the
-[code]#group# and [code]#sub_group# classes.
-Instances of the [code]#nd_item<int Dimensions># class are not
-user-constructible and are passed by the runtime to each instance of the
-function object.
+The [code]#nd_item# class template identifies an instance of a kernel function
+object executing at each point in an <<nd-range>>.
+It encapsulates enough information to identify the work-item's local and global
+<<id,ids>>, the <<work-group-id>> and also provides access to the [code]#group#
+and [code]#sub_group# classes.
+
+The implementation constructs instances of the [code]#nd_item# class template.
+Applications that attempt to default construct an [code]#nd_item# object are ill
+formed, and the implementation must issue a diagnostic in this case.
+
+{note}If using {cpp17}, implementations must ensure that the [code]#nd_item#
+class template is not an aggregate.
+{endnote}
 
 The SYCL [code]#nd_item# class template provides the common by-value semantics
 (see <<sec:byval-semantics>>).
@@ -13178,7 +13300,7 @@ template <typename... EventTN> void wait_for(EventTN... events) const noexcept;
 
 The [code]#h_item# class is deprecated in SYCL 2020.
 
-[code]#h_item<int Dimensions># identifies an instance of a
+The [code]#h_item# class template identifies an instance of a
 [code]#group::parallel_for_work_item# function object executing at each point in
 a local [code]#range<int Dimensions># passed to a [code]#parallel_for_work_item#
 call or to the corresponding [code]#parallel_for_work_group# call if no
@@ -13188,8 +13310,14 @@ global <<item,items>> according to the information given to
 [code]#parallel_for_work_group# (physical ids) as well as the <<work-item>>'s
 logical local <<item,items>> in the logical local range.
 All returned <<item,items>> objects are offset-less.
-Instances of the [code]#h_item<int Dimensions># class are not user-constructible
-and are passed by the runtime to each instance of the function object.
+
+The implementation constructs instances of the [code]#h_item# class template.
+Applications that attempt to default construct an [code]#h_item# object are ill
+formed, and the implementation must issue a diagnostic in this case.
+
+{note}If using {cpp17}, implementations must ensure that the [code]#h_item#
+class template is not an aggregate.
+{endnote}
 
 The SYCL [code]#h_item# class template provides the common by-value semantics
 (see <<sec:byval-semantics>>).
@@ -13371,9 +13499,18 @@ std::size_t get_physical_local_id(int dimension) const noexcept;
 [[group-class]]
 ==== [code]#group# class
 
-The [code]#group<int Dimensions># encapsulates all functionality required to
-represent a particular <<work-group>> within a parallel execution.
-It is not user-constructible.
+The [code]#group# class template encapsulates all functionality required to
+represent a specific <<work-group>> within a kernel.
+
+The set of work-items represented by an instance of the [code]#group# class
+template is determined by the implementation, and there is subsequently no way
+for a user to construct arbitrary instances of the [code]#group# class template.
+Applications that attempt to default construct a [code]#group# object are ill
+formed, and the implementation must issue a diagnostic in this case.
+
+{note}If using {cpp17}, implementations must ensure that the [code]#group# class
+template is not an aggregate.
+{endnote}
 
 The local range stored in the group class is provided either by the programmer,
 when it is passed as an optional parameter to [code]#parallel_for_work_group#,
@@ -13705,8 +13842,17 @@ template <typename... EventTN> void wait_for(EventTN... events) const noexcept;
 ==== [code]#sub_group# class
 
 The [code]#sub_group# class encapsulates all functionality required to represent
-a particular <<sub-group>> within a parallel execution.
-It is not user-constructible.
+a specific <<sub-group>> within a kernel.
+
+The set of work-items represented by an instance of the [code]#sub_group# class
+is determined by the implementation, and there is subsequently no way for a user
+to construct arbitrary instances of the [code]#sub_group# class.
+Applications that attempt to default construct a [code]#sub_group# object are
+ill formed, and the implementation must issue a diagnostic in this case.
+
+{note}If using {cpp17}, implementations must ensure that the [code]#sub_group#
+class is not an aggregate.
+{endnote}
 
 The SYCL [code]#sub_group# class provides the common by-value semantics (see
 <<sec:byval-semantics>>).
@@ -14490,10 +14636,16 @@ command group scope will be submitted to a queue.
 [[sec:handlerClass]]
 === Command group [code]#handler# class
 
-A <<handler>> object can only be constructed by the SYCL runtime.
-All of the accessors defined in <<command-group-scope>> take as a parameter an
-instance of the <<handler>>, and all the kernel invocation functions are member
-functions of this class.
+The implementation passes an instance of the [code]#handler# object to the
+<<command-group-function-object>>.
+
+The implementation constructs instances of the [code]#handler# class.
+Applications that attempt to default construct a [code]#handler# object are ill
+formed, and the implementation must issue a diagnostic in this case.
+
+{note}If using {cpp17}, implementations must ensure that the [code]#handler#
+class is not an aggregate.
+{endnote}
 
 It is disallowed for an instance of the SYCL [code]#handler# class to be moved
 or copied.
@@ -15402,7 +15554,7 @@ The type [code]#T# must be <<device-copyable>>.
 a@
 [source]
 ----
-void prefetch(void* ptr, std::size_t numBytes)
+void prefetch(const void* ptr, std::size_t numBytes)
 ----
 a@ Enqueues a prefetch of [code]#num_bytes# of data starting at address
 [code]#ptr#.  The [code]#ptr# must point within a USM allocation from the same
@@ -15412,7 +15564,7 @@ queue's device.  For more detail on USM, please see <<sec:usm>>.
 a@
 [source]
 ----
-void mem_advise(void* ptr, std::size_t numBytes, int advice)
+void mem_advise(const void* ptr, std::size_t numBytes, int advice)
 ----
 a@ Enqueues a command that provides information to the implementation about a
 region of USM starting at [code]#ptr# and extending for [code]#numBytes# bytes.
@@ -15810,8 +15962,13 @@ and any <<buffer,buffers>> or <<image,images>> that are captured in the callable
 being invoked in order to allow a <<host-task>> to be used for interoperability
 purposes.
 
-An [code]#interop_handle# cannot be constructed by user-code, only by the
-<<sycl-runtime>>.
+The implementation constructs instances of the [code]#interop_handle# class.
+Applications that attempt to default construct an [code]#interop_handle# object
+are ill formed, and the implementation must issue a diagnostic in this case.
+
+{note}If using {cpp17}, implementations must ensure that the
+[code]#interop_handle# class is not an aggregate.
+{endnote}
 
 [source,,linenums]
 ----
@@ -16188,6 +16345,15 @@ bundle_state::executable
 
 Some of the functions related to kernel bundles take an input parameter of type
 [code]#kernel_id# which identifies a kernel.
+
+The implementation constructs instances of the [code]#kernel_id# class.
+Applications that attempt to default construct a [code]#kernel_id# object are
+ill formed, and the implementation must issue a diagnostic in this case.
+
+{note}If using {cpp17}, implementations must ensure that the [code]#kernel_id#
+class is not an aggregate.
+{endnote}
+
 A synopsis of the [code]#kernel_id# class is shown below along with a
 description of its member functions.
 Additionally, this class provides the common special member functions and common
@@ -16802,7 +16968,13 @@ Two bundles of the same <<bundle-state>> are considered to be equal if they are
 associated with the same context, have the same set of associated devices, and
 contain the same set of device images.
 
-There is no public default constructor for this class.
+The implementation constructs instances of the [code]#kernel_bundle# class.
+Applications that attempt to default construct a [code]#kernel_bundle# object
+are ill formed, and the implementation must issue a diagnostic in this case.
+
+{note}If using {cpp17}, implementations must ensure that the
+[code]#kernel_bundle# class is not an aggregate.
+{endnote}
 
 [source,,linenums]
 ----
@@ -17052,7 +17224,13 @@ member functions that are listed in <<sec:reference-semantics>> in
 <<table.specialmembers.common.reference>> and
 <<table.hiddenfriends.common.reference>>, respectively.
 
-There is no public default constructor for this class.
+The implementation constructs instances of the [code]#kernel# class.
+Applications that attempt to default construct a [code]#kernel# object are ill
+formed, and the implementation must issue a diagnostic in this case.
+
+{note}If using {cpp17}, implementations must ensure that the [code]#kernel#
+class is not an aggregate.
+{endnote}
 
 [source,,linenums]
 ----
@@ -17134,6 +17312,7 @@ _Throws:_
     the <<backend>> that corresponds with [code]#Param# is different from the
     <<backend>> that is associated with this kernel bundle.
 
+[[sec:kernel-info-descriptors]]
 ==== Kernel information descriptors
 
 A <<kernel>> can be queried for information using the [code]#get_info()# member
@@ -17302,12 +17481,18 @@ member functions that are listed in <<sec:reference-semantics>> in
 <<table.specialmembers.common.reference>> and
 <<table.hiddenfriends.common.reference>>, respectively.
 
+The implementation constructs instances of the [code]#device_image# class.
+Applications that attempt to default construct a [code]#device_image# object are
+ill formed, and the implementation must issue a diagnostic in this case.
+
+{note}If using {cpp17}, implementations must ensure that the
+[code]#device_image# class is not an aggregate.
+{endnote}
+
 [source,,linenums]
 ----
 include::{header_dir}/bundle/deviceImageClass.h[lines=4..-1]
 ----
-
-There is no public constructor for this class.
 
 [source]
 ----
@@ -17461,6 +17646,7 @@ declarable ([code]#std::complex#).
 include::{code_dir}/lambdaNameExamples.cpp[lines=4..-1]
 ----
 
+[[subsec:is-device-copyable-type-trait]]
 === [code]#is_device_copyable# type trait
 
 ....
@@ -17504,10 +17690,8 @@ a device copyable type in that case and the specialization is ignored.
 
 A SYCL application passes parameters to a kernel in different ways depending on
 whether the kernel is a named function object or a lambda expression.
-If the kernel is a named function object, the [code]#operator()# member function
-(or other member functions that it calls) may reference member variables inside
-the same named function object.
-Any such member variables become parameters to the kernel.
+If the kernel is a named function object, all non-static member variables of the
+named function object become parameters to the kernel.
 If the kernel is a lambda expression, any variables captured by the lambda
 become parameters to the kernel.
 
@@ -18936,6 +19120,7 @@ defined integer type.
 |====
 
 
+[[subsec:vec-aliases]]
 ==== Aliases
 
 The SYCL programming API provides all permutations of the type alias:
@@ -20346,6 +20531,7 @@ marray<bool, NumElements> operator!(const marray& v)
 
 
 
+[[subsec:marray-aliases]]
 ==== Aliases
 
 The SYCL programming API provides all permutations of the type alias:
@@ -20491,6 +20677,11 @@ operations in device code with a syntax similar to the {cpp} standard
 [code]#std::atomic_ref#.
 The [code]#sycl::atomic_ref# class must not be used in host code.
 
+The referenced object of type [code]#T# must not reside in the private address
+space.
+If [code]#atomic_ref# is constructed with a reference to an object in the
+private address space, the behavior is undefined.
+
 Unlike [code]#std::atomic_ref#, [code]#sycl::atomic_ref# does not provide a
 default memory ordering for its operations.
 Instead, the application must specify a default ordering via the
@@ -20514,6 +20705,10 @@ The [code]#sycl::atomic_ref# class has a template parameter
 scope for the atomic operations.
 Most member functions also provide an optional parameter that allows the
 application to override this default.
+A member function must not be invoked with [code]#memory_scope::work_item#,
+whether by using the default scope or by explicitly specifying a scope.
+If a member function is invoked with [code]#memory_scope::work_item# the
+behavior is undefined.
 
 The [code]#sycl::atomic_ref# class also has a template parameter
 [code]#AddressSpace#, which allows the application to make an assertion about
@@ -20640,6 +20835,8 @@ void store(T operand, memory_order order = default_write_order,
       This function is only supported for 64-bit data types on devices that have
       [code]#aspect::atomic64#.
 
+The behavior is undefined if scope is [code]#memory_scope::work_item#.
+
 a@
 [source]
 ----
@@ -20659,6 +20856,8 @@ T load(memory_order order = default_read_order, memory_scope scope =
       or [code]#memory_order::seq_cst#.  This function is only supported for
       64-bit data types on devices that have [code]#aspect::atomic64#.
 
+The behavior is undefined if scope is [code]#memory_scope::work_item#.
+
 a@
 [source]
 ----
@@ -20677,6 +20876,8 @@ T exchange(T operand, memory_order order = default_read_modify_write_order,
       returns the original value of the referenced object.
       This function is only supported for 64-bit data types on devices that have
       [code]#aspect::atomic64#.
+
+The behavior is undefined if scope is [code]#memory_scope::work_item#.
 
 a@
 [source]
@@ -20700,6 +20901,8 @@ successful. The [code]#failure# memory order of this atomic operation must be
 This function is only supported for 64-bit data types on devices that have
 [code]#aspect::atomic64#.
 
+The behavior is undefined if scope is [code]#memory_scope::work_item#.
+
 a@
 [source]
 ----
@@ -20721,6 +20924,7 @@ if (order == memory_order::acq_rel) {
 }
 return compare_exchange_weak(expected, desired, success, failure, scope);
 ----
+The behavior is undefined if scope is [code]#memory_scope::work_item#.
 
 a@
 [source]
@@ -20742,6 +20946,8 @@ successful. The [code]#failure# memory order of this atomic operation must be
 
 This function is only supported for 64-bit data types on devices that have
 [code]#aspect::atomic64#.
+
+The behavior is undefined if scope is [code]#memory_scope::work_item#.
 
 a@
 [source]
@@ -20786,6 +20992,8 @@ T fetch_add(T operand, memory_order order = default_read_modify_write_order,
       value of the referenced object.  This function is only supported for 64-bit
       data types on devices that have [code]#aspect::atomic64#.
 
+The behavior is undefined if scope is [code]#memory_scope::work_item#.
+
 a@
 [source]
 ----
@@ -20818,6 +21026,8 @@ T fetch_sub(T operand, memory_order order = default_read_modify_write_order,
       the result to the value of the referenced object.  Returns the original
       value of the referenced object.  This function is only supported for 64-bit
       data types on devices that have [code]#aspect::atomic64#.
+
+The behavior is undefined if scope is [code]#memory_scope::work_item#.
 
 a@
 [source]
@@ -20853,6 +21063,8 @@ T fetch_and(T operand, memory_order order = default_read_modify_write_order,
       for 64-bit data types on devices that have
       [code]#aspect::atomic64#.
 
+The behavior is undefined if scope is [code]#memory_scope::work_item#.
+
 a@
 [source]
 ----
@@ -20872,6 +21084,8 @@ T fetch_or(T operand, memory_order order = default_read_modify_write_order,
       original value of the referenced object.  This function is only supported
       for 64-bit data types on devices that have
       [code]#aspect::atomic64#.
+
+The behavior is undefined if scope is [code]#memory_scope::work_item#.
 
 a@
 [source]
@@ -20893,6 +21107,8 @@ T fetch_xor(T operand, memory_order order = default_read_modify_write_order,
       for 64-bit data types on devices that have
       [code]#aspect::atomic64#.
 
+The behavior is undefined if scope is [code]#memory_scope::work_item#.
+
 a@
 [source]
 ----
@@ -20913,6 +21129,8 @@ T fetch_min(T operand, memory_order order = default_read_modify_write_order,
       for 64-bit data types on devices that have
       [code]#aspect::atomic64#.
 
+The behavior is undefined if scope is [code]#memory_scope::work_item#.
+
 a@
 [source]
 ----
@@ -20925,6 +21143,8 @@ T fetch_max(T operand, memory_order order = default_read_modify_write_order,
       original value of the referenced object.  This function is only supported
       for 64-bit data types on devices that have
       [code]#aspect::atomic64#.
+
+The behavior is undefined if scope is [code]#memory_scope::work_item#.
 
 |====
 
@@ -20947,6 +21167,8 @@ T fetch_add(T operand, memory_order order = default_read_modify_write_order,
       value of the referenced object.  This function is only supported for 64-bit
       data types on devices that have [code]#aspect::atomic64#.
 
+The behavior is undefined if scope is [code]#memory_scope::work_item#.
+
 a@
 [source]
 ----
@@ -20965,6 +21187,8 @@ T fetch_sub(T operand, memory_order order = default_read_modify_write_order,
       the result to the value of the referenced object.  Returns the original
       value of the referenced object.  This function is only supported for 64-bit
       data types on devices that have [code]#aspect::atomic64#.
+
+The behavior is undefined if scope is [code]#memory_scope::work_item#.
 
 a@
 [source]
@@ -20985,6 +21209,8 @@ T fetch_min(T operand, memory_order order = default_read_modify_write_order,
       original value of the referenced object.  This function is only supported for
       64-bit data types on devices that have [code]#aspect::atomic64#.
 
+The behavior is undefined if scope is [code]#memory_scope::work_item#.
+
 a@
 [source]
 ----
@@ -20996,6 +21222,8 @@ T fetch_max(T operand, memory_order order = default_read_modify_write_order,
       and assigns the result to the value of the referenced object. Returns the
       original value of the referenced object.  This function is only supported for
       64-bit data types on devices that have [code]#aspect::atomic64#.
+
+The behavior is undefined if scope is [code]#memory_scope::work_item#.
 
 |====
 
@@ -21018,6 +21246,8 @@ T* fetch_add(ptrdiff_t operand,
       the result to the value of the referenced object.  Returns the original
       value of the referenced object.  This function is only supported for 64-bit
       pointers on devices that have [code]#aspect::atomic64#.
+
+The behavior is undefined if scope is [code]#memory_scope::work_item#.
 
 a@
 [source]
@@ -21052,6 +21282,8 @@ T* fetch_sub(ptrdiff_t operand,
       the result to the value of the referenced object.  Returns the original
       value of the referenced object.  This function is only supported for 64-bit
       pointers on devices that have [code]#aspect::atomic64#.
+
+The behavior is undefined if scope is [code]#memory_scope::work_item#.
 
 a@
 [source]
@@ -22062,6 +22294,7 @@ described in <<sec:kernel.query>>.
 It is undefined behavior for any group function to be invoked within a
 [code]#parallel_for_work_group# or [code]#parallel_for_work_item# context.
 
+[[subsec:group-type-traits]]
 ==== Group type trait
 
 [source,,linenums]
@@ -25586,6 +25819,7 @@ The return type is [code]#NonScalar# unless [code]#NonScalar# is the
 '''
 
 
+[[sec:native-precision-math-functions]]
 === Native precision math functions
 
 This section describes the native precision math functions that are available in
@@ -26024,6 +26258,7 @@ The return type is [code]#NonScalar# unless [code]#NonScalar# is the
 '''
 
 
+[[sec:half-precision-math-functions]]
 === Half precision math functions (deprecated)
 
 This section describes the half precision math functions that are available in
@@ -27287,6 +27522,7 @@ The return type is [code]#Int32Bit1# unless [code]#Int32Bit1# is the
 '''
 
 
+[[sec:common-functions]]
 === Common functions
 
 This section describes the common functions that are available in the

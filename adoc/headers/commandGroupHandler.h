@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2025 The Khronos Group, Inc.
+// Copyright (c) 2011-2026 The Khronos Group, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
 namespace sycl {
@@ -82,9 +82,9 @@ class handler {
 
   template <typename T> void fill(void* ptr, const T& pattern, std::size_t count);
 
-  void prefetch(void* ptr, std::size_t numBytes);
+  void prefetch(const void* ptr, std::size_t numBytes);
 
-  void mem_advise(void* ptr, std::size_t numBytes, int advice);
+  void mem_advise(const void* ptr, std::size_t numBytes, int advice);
 
   //------ Explicit memory operation APIs
   //

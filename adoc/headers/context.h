@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2025 The Khronos Group, Inc.
+// Copyright (c) 2011-2026 The Khronos Group, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
 namespace sycl {
@@ -12,6 +12,11 @@ class context {
   explicit context(const device& dev, const property_list& propList = {});
 
   explicit context(const device& dev, async_handler asyncHandler,
+                   const property_list& propList = {});
+
+  explicit context(const platform& plt, const property_list& propList = {});
+
+  explicit context(const platform& plt, async_handler asyncHandler,
                    const property_list& propList = {});
 
   explicit context(const std::vector<device>& deviceList,
