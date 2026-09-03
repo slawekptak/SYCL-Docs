@@ -274,12 +274,11 @@ All accessors that a command requires must therefore be passed to a single
 class template whose template parameters are the types of its runtime-supplied
 values rather than compile-time property values.
 An application obtains it by constructing an instance and letting
-[code]#AccessorTs# be deduced, as in
-[code]#khr::property::use_accessors{accA, accB}#.
-One consequence is that
-[code]#get_property<property::key::use_accessors>()# returns a type that depends
-on [code]#AccessorTs#, so code which retrieves this property must be
-templated.{endnote}
+[code]#AccessorTs# be deduced, as in [code]#khr::property::use_accessors{accA,
+accB}#.
+One consequence is that [code]#get_property<property::key::use_accessors>()#
+returns a type that depends on [code]#AccessorTs#, so code which retrieves this
+property must be templated.{endnote}
 
 The following traits inherit from [code]#std::true_type#:
 
@@ -287,8 +286,7 @@ The following traits inherit from [code]#std::true_type#:
   [code]#AccessorTs...#
 * [code]#is_property_key<property::key::use_accessors>#
 * [code]#is_property_for<property::use_accessors<AccessorTs...>, command>#
-* [code]#is_property_key_for<property::key::use_accessors,
-  command>#
+* [code]#is_property_key_for<property::key::use_accessors, command>#
 
 [code]#property::use_accessors# is not trivially copyable.
 [code]#property::key::use_accessors# is trivially copyable.
@@ -1141,8 +1139,8 @@ The barrier completes when:
 * All events (specified by [code]#property::wait_event# or
   [code]#property::wait_events#) in [code]#props# have completed.
 
-If [code]#props# contains [code]#property::signal_event#, the event is
-signaled when the barrier completes.
+If [code]#props# contains [code]#property::signal_event#, the event is signaled
+when the barrier completes.
 
 {note}If a barrier is submitted to an in-order queue with no properties, then
 this operation may be a no-op.{endnote}
@@ -1268,9 +1266,9 @@ commands.{endnote}
 == Interactions between event APIs
 
 An event _E_ created via [code]#make_event# can be used as a command dependency
-using the APIs introduced by this extension (e.g. [code]#enqueue_wait_event#)
-or using other APIs (e.g. [code]#handler::depends_on#) for a command submitted
-to some queue _Q_.
+using the APIs introduced by this extension (e.g. [code]#enqueue_wait_event#) or
+using other APIs (e.g. [code]#handler::depends_on#) for a command submitted to
+some queue _Q_.
 It is not necessary for the context of _E_ to match the context of _Q_.
 
 An event _E_ created via [code]#make_event# can also be used for signaling
